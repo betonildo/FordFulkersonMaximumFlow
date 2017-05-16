@@ -3,6 +3,7 @@
 
 TARGET = FordFulkersonMaximumFlow
 
+# Remove qt default libraries for a c++ default project
 CONFIG -= qt
 
 HEADERS = \
