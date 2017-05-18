@@ -7,10 +7,11 @@
 #include <memory>
 #include <queue>
 #include <cstdint>
+#include <climits>
 #include <cstring>
 #include <cmath>
 
-//#define INF UINT_MAX
+#define INF UINT_MAX
 typedef unsigned int U32;
 typedef unsigned short U16;
 typedef unsigned char U8;

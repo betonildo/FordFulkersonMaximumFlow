@@ -24,7 +24,7 @@ void read_dimacs(FILE* stream, Graph& g) {
     while (line.substr(0, 4) != "p sp" && line.substr(0, 5) != "p max") {
         memset(buffer, 0, BUFSIZE);
         line = fgets(buffer, BUFSIZE, stream);
-        std::cout << "line content: " << line << std::endl;
+        // std::cout << "line content: " << line << std::endl;
     }
     
     unsigned int size = line.length();

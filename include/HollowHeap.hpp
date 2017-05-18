@@ -3,8 +3,6 @@
 
 #include "utils.hpp"
 #include "definitions.hpp"
-#include "memory_used.hpp"
-#include "ScopeGuard.hpp"
 
 template< typename T >
 struct array_deleter
@@ -31,7 +29,7 @@ public:
 
     public:
         Value value;
-        std::weak_ptr<Node> node;
+        std::shared_ptr<Node> node;
 
         Element(Value value) {
             this->value = value;
@@ -69,16 +67,21 @@ public:
         m_nodesCount += 1;
     }
 
-    void insert(Key k, Value v) {
+    inline void insert(Key k, Value v) {
         ElementSPtr elementPtr(new Element(v));
         NodeSPtr nodePtr(new Node(elementPtr, k));
         elementPtr->node = nodePtr;
         m_headNode = meld(m_headNode, nodePtr);
         m_nodesCount += 1;
     }
+    
+    inline void update(Key k, Value v) {
+        ElementSPtr ePtr(new Element(v));
+        decreaseKey(ePtr, k);
+    }
 
-    void decreaseKey(ElementSPtr& e, Key k) {
-        NodeSPtr u = e.node;
+    inline void decreaseKey(ElementSPtr& e, Key k) {
+        NodeSPtr u = e->node;
         NodeSPtr v(new Node(e, k));
         v->rank = MAX(0, u ? u->rank - 2 : 0);
 
@@ -91,12 +94,12 @@ public:
         m_nodesCount += 1;
     }
 
-    void deleteElement(ElementSPtr& e) {
+    inline void deleteElement(ElementSPtr& e) {
         if (e.node->element) e.node->element = nullptr;
         if (e.node == m_headNode) deleteMin();
     }
 
-    void deleteMin() {
+    inline void deleteMin() {
 
         if (m_headNode == nullptr) return;
         if (m_headNode->element != nullptr) m_headNode->element = nullptr;
@@ -105,12 +108,12 @@ public:
         // to reduce the number N, used to discover M, each hollowNode that is
         // removed from heap, decrements one
         double lres = logBase(m_nodesCount, PHI);
-        U32 M = ceil(lres);
+        uint M = ceil(lres);
 
         std::unique_ptr<NodeSPtr[]> Roots(new NodeSPtr[M]);
-        for (U32 i = 0; i < M; i++) Roots.get()[i] = nullptr;
+        for (uint i = 0; i < M; i++) Roots.get()[i] = nullptr;
 
-        U32 hollowNodesCount = 0;
+        uint hollowNodesCount = 0;
 
         NodeSPtr root = m_headNode;
 
@@ -123,7 +126,7 @@ public:
 
         m_headNode = nullptr;
 
-        for (U32 i = 0; i < M; i++) {
+        for (uint i = 0; i < M; i++) {
             NodeSPtr cursor = Roots.get()[i];
             if (cursor) {
                 cursor->nextSibling = cursor;
@@ -134,20 +137,24 @@ public:
         m_nodesCount = MAX(0, m_nodesCount - hollowNodesCount);
     }
 
-    bool isEmpty() {
+    inline bool isEmpty() {
         return !m_headNode;
     }
 
-    Value findminValue() {
-        return !isEmpty() ? findmin()->value : Value();
+    inline Value findminValue() {
+        return findmin()->value;
+    }
+    
+    inline Key findminKey() {
+        return getmin()->key;
     }
 
-    ElementSPtr findmin() {
+    inline ElementSPtr findmin() {
         if (m_headNode) return m_headNode->element;
         else return nullptr;
     }
 
-    NodeSPtr getmin() {
+    inline NodeSPtr getmin() {
         return m_headNode;
     }
 
@@ -202,7 +209,7 @@ private:
             h = nullptr;
         }
         else {
-            U32 i = h->rank;
+            uint i = h->rank;
             while(Roots.get()[i]) {
                 h = link(h, Roots.get()[i]);
                 Roots.get()[i] = nullptr;
