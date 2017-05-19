@@ -29,7 +29,7 @@ public:
 
     public:
         Value value;
-        std::shared_ptr<Node> node;
+        NodeSPtr node;
 
         Element(Value value) {
             this->value = value;
@@ -41,9 +41,9 @@ public:
 
     public:
         Key key;
-        std::shared_ptr<Element> element;
-        std::shared_ptr<Node> firstChild;
-        std::shared_ptr<Node> nextSibling;
+        ElementSPtr element;
+        NodeSPtr firstChild;
+        NodeSPtr nextSibling;
         uint rank;
 
         Node(std::shared_ptr<Element>& element, Key key) {
@@ -198,6 +198,12 @@ private:
 
     NodeSPtr& linkHeap(NodeSPtr& h, std::unique_ptr<NodeSPtr[]>& Roots, U32& hollowNodesCount) {
 
+        if (
+                h->firstChild &&
+                h->firstChild->firstChild &&
+                h->firstChild == h->firstChild->firstChild)
+            return h;
+
         if (h->element == nullptr) {
             NodeSPtr root = h->firstChild;
             while(root) {
@@ -214,6 +220,7 @@ private:
                 h = link(h, Roots.get()[i]);
                 Roots.get()[i] = nullptr;
                 i = i + 1;
+                hollowNodesCount++;
             }
 
             Roots.get()[i] = h;
@@ -223,6 +230,8 @@ private:
     }
 
     NodeSPtr& link(NodeSPtr& h1, NodeSPtr& h2) {
+        if (!h1) return h2;
+        if (!h2) return h1;
         if (h1->key <= h2->key) return makeChild(h1, h2);
         else return makeChild(h2, h1);
     }

@@ -1,5 +1,7 @@
 #include "Graph.hpp"
 
+typedef std::pair<uint, uint> verticeWeight;
+
 Graph::Graph() {
     m_edgesCount = 0;
     m_verticesCount = 0;
@@ -29,7 +31,7 @@ void Graph::set(uint u, uint v, uint w) {
     if (m_verticesCount < v) m_verticesCount = v;
     
     m_graph[u][v] = w;
-    m_graph[v][u] = w;
+//    m_graph[v][u] = w;
 }
 
 void Graph::unset(uint u, uint v) {
@@ -47,22 +49,32 @@ uint Graph::ford_fulkerson_max_flow(uint s, uint t) {
     
     Graph rGraph((Graph&) *this);
     std::vector<uint> parent;
+    parent.clear();
     
-    uint dist = rGraph.dijkstra(s, t, parent);
-    
-    
-    std::cout << "path: " << std::endl;
-    for(uint i = t; i != s; i = parent[i]) {
-        std::cout << i;
-        
-        if (i != s) {
-            std::cout << " <-- ";
+    uint max_flow = 0;
+    uint dist = 0;
+    while(dist < INF) {
+        // while there is a path, the dijkstra resulting is a
+        dist = rGraph.dijkstra(s, t, parent);
+
+        uint path_flow = INF;
+        // get the minimum flow throughout the path
+        for (uint v = t; v != s && v > 0; v = parent[v]) {
+            uint u = parent[v];
+            path_flow = MIN(path_flow, rGraph.get(u, v));
         }
+
+        // update residual graph
+        for (uint v = t; v != s && v > 0; v = parent[v]) {
+            uint u = parent[v];
+            rGraph.get(u, v) = MIN(0, rGraph.get(v, u) - path_flow);
+            rGraph.get(v, u) = MIN(INF, rGraph.get(v, u) + path_flow);
+        }
+
+        max_flow += path_flow;
     }
-    
-    std::cout << std::endl;
-    
-    return dist;
+
+    return max_flow;
 }
 
 uint Graph::dijkstra(uint s, uint t, std::vector<uint>& parent) {
@@ -78,22 +90,23 @@ uint Graph::dijkstra(uint s, uint t, std::vector<uint>& parent) {
     // clear parents and reserve magic number
     parent.clear();
     parent.reserve(m_verticesCount);
-    
+    parent[0] = -1;
     // init heap
     distances[s] = 0;
-    HollowHeap<uint, uint> heap(s, 0);
+    HollowHeap<uint, uint> heap(0, s);
     
     while(!heap.isEmpty()) {
         
         // get next vertice
-        uint u = heap.findminKey();
+        uint u = heap.findminValue();
         heap.deleteMin();
-        
+
         // reached to the end
         if (u == t) break;
-        
+
         // get what was not visited yet
         if (!visited[u]) {
+
             visited[u] = true;
             
             // cicle all neighbors
@@ -102,18 +115,17 @@ uint Graph::dijkstra(uint s, uint t, std::vector<uint>& parent) {
                 uint v = kvNeighbor.first;
                 uint w = kvNeighbor.second;
                 uint c = distances[u] + w;
-                
+
                 // if the edge has some weight
                 if (w > 0) {
-                    // set parent and update distance
                     parent[v] = u;
-                    if (distances[v] == INF && c < distances[v]) {
+                    // set parent and update distance
+                    if (distances[v] == INF) {
                         distances[v] = c;
-                        heap.insert(v, c);
+                        heap.insert(c, v);
                     }
                     else if (c < distances[v]) {
                         distances[v] = c;
-                        heap.update(v, c);
                     }
                 }
             }

@@ -11,7 +11,7 @@
 #include <cstring>
 #include <cmath>
 
-#define INF UINT_MAX
+#define INF INT_MAX - 1
 typedef unsigned int U32;
 typedef unsigned short U16;
 typedef unsigned char U8;
