@@ -1,6 +1,6 @@
 #include "Graph.hpp"
 
-typedef std::pair<uint, uint> verticeWeight;
+typedef std::pair<int, int> verticeWeight;
 
 Graph::Graph() {
     m_edgesCount = 0;
@@ -12,7 +12,7 @@ Graph::Graph(Graph& other) {
     m_verticesCount = other.m_verticesCount;
     m_edgesCount = other.m_edgesCount;
     
-    for(uint i = 0; i < m_verticesCount; i++) {
+    for(int i = 0; i < m_verticesCount; i++) {
     
         if (other.m_graph.find(i) != other.m_graph.end()) {
             for(auto& kvPair : other.m_graph[i]) {
@@ -22,7 +22,7 @@ Graph::Graph(Graph& other) {
     }
 }
 
-void Graph::set(uint u, uint v, uint w) {
+void Graph::set(int u, int v, int w) {
     
     m_edgesCount++;
     
@@ -31,44 +31,49 @@ void Graph::set(uint u, uint v, uint w) {
     if (m_verticesCount < v) m_verticesCount = v;
     
     m_graph[u][v] = w;
-//    m_graph[v][u] = w;
+    m_graph[v][u] = w;
 }
 
-void Graph::unset(uint u, uint v) {
+void Graph::unset(int u, int v) {
     m_edgesCount--;
     m_graph[u].erase(v);
 }
 
-void Graph::unset(uint u) {
+void Graph::unset(int u) {
     m_verticesCount--;
     m_graph.erase(u);
 }
 
 // find the maximum flow
-uint Graph::ford_fulkerson_max_flow(uint s, uint t) {
+int Graph::ford_fulkerson_max_flow(int s, int t) {
     
     Graph rGraph((Graph&) *this);
-    std::vector<uint> parent;
+    std::vector<int> parent;
     parent.clear();
+    parent.resize(m_edgesCount + 1);
+    std::cout << "edges count: " << m_edgesCount << std::endl;
+    parent[0] = -1;
     
-    uint max_flow = 0;
-    uint dist = 0;
-    while(dist < INF) {
+    int max_flow = 0;
+    int dist = 0;
+    bool shouldContinue = true;
+    while(shouldContinue) {
+
         // while there is a path, the dijkstra resulting is a
         dist = rGraph.dijkstra(s, t, parent);
-
-        uint path_flow = INF;
+        std::cout << "dist: " << dist << std::endl;
+        int path_flow = INF;
         // get the minimum flow throughout the path
-        for (uint v = t; v != s && v > 0; v = parent[v]) {
-            uint u = parent[v];
+        for (int v = t; v != s && v > 0; v = parent[v]) {
+            int u = parent[v];
             path_flow = MIN(path_flow, rGraph.get(u, v));
         }
 
         // update residual graph
-        for (uint v = t; v != s && v > 0; v = parent[v]) {
-            uint u = parent[v];
-            rGraph.get(u, v) = MIN(0, rGraph.get(v, u) - path_flow);
-            rGraph.get(v, u) = MIN(INF, rGraph.get(v, u) + path_flow);
+        for (int v = t; v != s && v > 0; v = parent[v]) {
+            int u = parent[v];
+            rGraph.get(u, v) = rGraph.get(v, u) - path_flow;
+            rGraph.get(v, u) = rGraph.get(v, u) + path_flow;
         }
 
         max_flow += path_flow;
@@ -77,55 +82,59 @@ uint Graph::ford_fulkerson_max_flow(uint s, uint t) {
     return max_flow;
 }
 
-uint Graph::dijkstra(uint s, uint t, std::vector<uint>& parent) {
+int Graph::dijkstra(int s, int t, std::vector<int>& parent) {
     
     // mark visited vertices (auto release on scope exit)
     std::unique_ptr<bool[]> visited(new bool[m_verticesCount]);
-    std::unique_ptr<uint[]> distances(new uint[m_verticesCount]);
+    std::unique_ptr<int[]> distances(new int[m_verticesCount]);
     
     // set all to false
-    memset(visited.get(), false, m_verticesCount);
-    memset(distances.get(), INF, m_verticesCount);
-    
-    // clear parents and reserve magic number
-    parent.clear();
-    parent.reserve(m_verticesCount);
-    parent[0] = -1;
+    for (uint i = 0; i < m_verticesCount; i++) {
+        visited[i] = false;
+        distances[i] = INF;
+    }
+
     // init heap
     distances[s] = 0;
-    HollowHeap<uint, uint> heap(0, s);
-    
+    HollowHeap<int, int> heap(0, s);
+//    NHeap<Edge> heap(2);
+//    heap.insert({s, 0});
+
+//    while(!heap.empty()) {
     while(!heap.isEmpty()) {
         
         // get next vertice
-        uint u = heap.findminValue();
+        //int u = heap.getNext().to;
+        int u = heap.findminValue();
         heap.deleteMin();
 
         // reached to the end
-        if (u == t) break;
+//        if (u == t) break;
 
         // get what was not visited yet
         if (!visited[u]) {
-
             visited[u] = true;
             
             // cicle all neighbors
             for(auto& kvNeighbor : m_graph[u]) {
                 
-                uint v = kvNeighbor.first;
-                uint w = kvNeighbor.second;
-                uint c = distances[u] + w;
+                int v = kvNeighbor.first;
+                int w = kvNeighbor.second;
+                int c = distances[u] + w;
 
                 // if the edge has some weight
                 if (w > 0) {
                     parent[v] = u;
                     // set parent and update distance
-                    if (distances[v] == INF) {
+                    if (distances[v] == INF && c < distances[v]) {
                         distances[v] = c;
                         heap.insert(c, v);
+//                        heap.insert({v, w});
                     }
                     else if (c < distances[v]) {
                         distances[v] = c;
+                        heap.update(c, v);
+//                        heap.update({v, w});
                     }
                 }
             }
@@ -136,7 +145,7 @@ uint Graph::dijkstra(uint s, uint t, std::vector<uint>& parent) {
 }
 
 // confirm that exist a path from s to t
-bool Graph::breadth_first_transversal(uint s, uint t) {
+bool Graph::breadth_first_transversal(int s, int t) {
     
     // resulting
     bool found = false;
@@ -148,7 +157,7 @@ bool Graph::breadth_first_transversal(uint s, uint t) {
     memset(visited.get(), false, m_verticesCount);
 
     // breadth search is made using queues
-    std::queue<uint> q;
+    std::queue<int> q;
 
     // start from 'source'
     q.push(s);
@@ -156,7 +165,7 @@ bool Graph::breadth_first_transversal(uint s, uint t) {
     while(!q.empty()) {
 
         // dequeue
-        uint v = q.front();
+        int v = q.front();
         q.pop();
         
         // return true if v (the next vertice) is sink t
@@ -181,6 +190,6 @@ bool Graph::breadth_first_transversal(uint s, uint t) {
 }
 
 // get edge cost
-uint& Graph::get(uint u, uint v) {
+int& Graph::get(int u, int v) {
     return m_graph[u][v];
 }

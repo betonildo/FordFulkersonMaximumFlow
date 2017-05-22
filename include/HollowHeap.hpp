@@ -80,7 +80,7 @@ public:
         decreaseKey(ePtr, k);
     }
 
-    inline void decreaseKey(ElementSPtr& e, Key k) {
+    inline void decreaseKey(ElementSPtr e, Key k) {
         NodeSPtr u = e->node;
         NodeSPtr v(new Node(e, k));
         v->rank = MAX(0, u ? u->rank - 2 : 0);
@@ -116,13 +116,13 @@ public:
         uint hollowNodesCount = 0;
 
         NodeSPtr root = m_headNode;
-
+        NodeSPtr nextRoot;
         do {
-            NodeSPtr nextRoot = root->nextSibling;
+            nextRoot = root->nextSibling;
             root = linkHeap(root, Roots, hollowNodesCount);
             root = nextRoot;
 
-        }while(root != m_headNode && root);
+        }while(root != m_headNode && root && root->nextSibling != nextRoot);
 
         m_headNode = nullptr;
 
@@ -168,7 +168,7 @@ private:
     NodeSPtr m_headNode;
     uint m_nodesCount; // count for help define M on delete-min
 
-    NodeSPtr& meld(NodeSPtr& h1, NodeSPtr& h2) {
+    NodeSPtr meld(NodeSPtr h1, NodeSPtr h2) {
         if (!h1) return h2;
         if (!h2) return h1;
 
@@ -196,7 +196,7 @@ private:
         else return h2;
     }
 
-    NodeSPtr& linkHeap(NodeSPtr& h, std::unique_ptr<NodeSPtr[]>& Roots, U32& hollowNodesCount) {
+    NodeSPtr linkHeap(NodeSPtr h, std::unique_ptr<NodeSPtr[]>& Roots, U32& hollowNodesCount) {
 
         if (
                 h->firstChild &&
@@ -229,14 +229,14 @@ private:
         return h;
     }
 
-    NodeSPtr& link(NodeSPtr& h1, NodeSPtr& h2) {
+    NodeSPtr link(NodeSPtr h1, NodeSPtr h2) {
         if (!h1) return h2;
         if (!h2) return h1;
         if (h1->key <= h2->key) return makeChild(h1, h2);
         else return makeChild(h2, h1);
     }
 
-    NodeSPtr& makeChild(NodeSPtr& w, NodeSPtr& l) {
+    NodeSPtr makeChild(NodeSPtr w, NodeSPtr l) {
         l->nextSibling = w->firstChild;
         w->firstChild = l;
         w->rank = w->rank + 1;

@@ -15,12 +15,16 @@ HEADERS = \
    $$PWD/include/Node.hpp \
    $$PWD/include/read_dimacs.hpp \
    $$PWD/include/ScopeGuard.hpp \
-   $$PWD/include/utils.hpp
+   $$PWD/include/utils.hpp \
+    include/hollowheap.h \
+    include/nheap.hpp \
+    include/edge.hpp
 
 SOURCES = \
    $$PWD/src/Graph.cpp \
    $$PWD/src/main.cpp \
-   $$PWD/src/memory_used.cpp
+   $$PWD/src/memory_used.cpp \
+    src/hollowheap.cc
 
 INCLUDEPATH = \
     $$PWD/include

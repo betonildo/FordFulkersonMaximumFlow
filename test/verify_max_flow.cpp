@@ -37,23 +37,19 @@ int main(int argc, char *argv[]) {
   DiGraph g;
   DiNode s,t;
 
-                       int Source = atoi(argv[1]);
-                       int Sink = atoi(argv[2]);
-
   read_dimacs_max_flow(g,
                        get(&EdgeInformation::edge_capacity,g),
                        get(&EdgeInformation::reverse_edge,g),
                        s, t);
  
 
-                       
-                       std::cout << s << " " << t << std::endl;
-                       std::cout << Source << " " << Sink << std::endl;
-
   // (1) determine maximum flow
-  cout << push_relabel_max_flow(g, Source, Sink,
+  cout << "max flow: ";
+  cout << push_relabel_max_flow(g, s, t,
                                 get(&EdgeInformation::edge_capacity,g),
                                 get(&EdgeInformation::edge_residual_capacity,g),
                                 get(&EdgeInformation::reverse_edge,g),
-                                get(boost::vertex_index, g));    
+                                get(boost::vertex_index, g)) << endl;
+
+  cout << s << " " << t << endl;
 }
