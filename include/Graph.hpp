@@ -19,8 +19,10 @@ public:
     // find the maximum flow
     int ford_fulkerson_max_flow(int s, int t);
     
+    int dijkstraMaxPathFlow(int s, int t, std::vector<int>& parent);
+
     // 
-    int dijkstra(int s, int t, std::vector<int>& parent);
+    int dijkstra(int s, int t, std::vector<int>& parent);    
     
     // confirm that exist a path from s to t
     bool breadth_first_transversal(int s, int t);

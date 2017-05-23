@@ -3,28 +3,25 @@
 
 TARGET = FordFulkersonMaximumFlow
 
-# Remove qt default libraries for a c++ default project
 CONFIG -= qt
 
 HEADERS = \
    $$PWD/include/definitions.hpp \
-   $$PWD/include/Element.hpp \
+   $$PWD/include/edge.hpp \
    $$PWD/include/Graph.hpp \
+   $$PWD/include/hollowheap.h \
    $$PWD/include/HollowHeap.hpp \
    $$PWD/include/memory_used.hpp \
-   $$PWD/include/Node.hpp \
+   $$PWD/include/nheap.hpp \
    $$PWD/include/read_dimacs.hpp \
    $$PWD/include/ScopeGuard.hpp \
-   $$PWD/include/utils.hpp \
-    include/hollowheap.h \
-    include/nheap.hpp \
-    include/edge.hpp
+   $$PWD/include/utils.hpp
 
 SOURCES = \
    $$PWD/src/Graph.cpp \
+   $$PWD/src/hollowheap.cc \
    $$PWD/src/main.cpp \
-   $$PWD/src/memory_used.cpp \
-    src/hollowheap.cc
+   $$PWD/src/memory_used.cpp
 
 INCLUDEPATH = \
     $$PWD/include
