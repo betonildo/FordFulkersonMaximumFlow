@@ -3,14 +3,14 @@
 
 #include "definitions.hpp"
 #include "HollowHeap.hpp"
-#include "nheap.hpp"
-#include "edge.hpp"
 
 class Graph {
 
 public:
     Graph();
     Graph(Graph& other);
+
+    void setSize(int size);
 
     void set(int u, int v, int w);
     void unset(int u, int v);

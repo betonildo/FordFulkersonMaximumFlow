@@ -31,10 +31,10 @@ void read_dimacs(FILE* stream, Graph& g) {
     
     memset(buffer, 0, BUFSIZE);
     memcpy(buffer, line.c_str(), size);
-    char sp[3];
+    char sp[4];
     char s;
     sscanf(buffer, "%c %s %d %d", &s, sp, &n, &m);
-    // g.setSize(n);
+    g.setSize(n);
 
     unsigned int u, v, w;
     unsigned int i = 0;

@@ -17,9 +17,13 @@ Graph::Graph(Graph& other) {
         if (other.m_graph.find(i) != other.m_graph.end()) {
             for(auto& kvPair : other.m_graph[i]) {
                 m_graph[i][kvPair.first] = kvPair.second;
-            }            
+            }
         }
     }
+}
+
+void Graph::setSize(int size) {
+    m_verticesCount = size;
 }
 
 void Graph::set(int u, int v, int w) {
@@ -53,68 +57,74 @@ int Graph::ford_fulkerson_max_flow(int s, int t) {
     parent.resize(m_edgesCount + 1);
 
     int max_flow = 0;
-    int dist = 0;
-    bool shouldContinue = true;
+    int dist = 1;
 
-    while(dist < INF) {
+    while(dist > 0 && dist < INF) {
 
         // while there is a path, the dijkstra resulting is a
-        int path_flow = dist = rGraph.dijkstraMaxPathFlow(s, t, parent);
+        int path_flow = INF;
+        dist = rGraph.dijkstraMaxPathFlow(s, t, parent);
         std::cout << "dist: " << path_flow << std::endl;
-//        int path_flow = INF;
 
-//        // get the minimum flow throughout the path
-//        for (int v = t; v != s; v = parent[v]) {
-//            int u = parent[v];
-////            std::cout << u << " -> " << v << std::endl;
-//            path_flow = MIN(path_flow, rGraph.get(u, v));
-
-//        }
-
-        std::cout << "path_flow = " << path_flow << std::endl;
-
-        if (dist < INF) {
-            // update residual graph
-            for (int v = t; v != s; v = parent[v]) {
-                int u = parent[v];
-                rGraph.get(u, v) -= path_flow;
-                rGraph.get(v, u) += path_flow;
-            }
-
-            max_flow += path_flow;
+        for (int v = t; v != s && v != 0; v = parent[v]) {
+            int u = parent[v];
+            int w = rGraph.get(u, v);
+            path_flow = MIN(path_flow, w);
+            std::cout << u << " - " << path_flow << " -> " << v << std::endl;
         }
 
+        // update residual graph
+        for (int v = t; v != s && v != 0; v = parent[v]) {
+            int u = parent[v];
+            rGraph.get(u, v) -= path_flow;
+            rGraph.get(v, u) += path_flow;
+            std::cout << u << " - " << rGraph.get(u, v) << " -> " << v << std::endl;
+        }
 
+        max_flow += path_flow;
     }
 
     return max_flow;
 }
 
 int Graph::dijkstraMaxPathFlow(int s, int t, std::vector<int>& parent) {
+
     // mark visited vertices (auto release on scope exit)
     std::vector<bool> visited;
     std::vector<int> distances;
-    visited.resize(m_verticesCount);
-    distances.resize(m_verticesCount);
+    std::vector<int> fat;
+    visited.resize(m_verticesCount + 1);
+    distances.resize(m_verticesCount + 1);
+    fat.resize(m_verticesCount + 1);
 
     // set all to false
-    for (uint i = 0; i < m_verticesCount; i++) {
-        visited[i] = false;
-        distances[i] = INF;
+    for (uint i = 0; i < m_verticesCount + 1; i++) {
+        if (i != s) {
+            visited[i] = false;
+            distances[i] = INF;
+            fat[i] = 0;
+        }
     }
 
     // source is parent of it self
     parent[s] = s;
 
     // init heap
-    distances[s] = 0;
+    distances[s] = INF;
     HollowHeap<int, int> heap(0, s);
+
+    heap.comparison = [](int a, int b) -> bool {
+        return a > b;
+    };
 
     while(!heap.isEmpty()) {
 
         // get next vertice
         int u = heap.findminValue();
         heap.deleteMin();
+
+        // reached to the end
+//        if (u == t) break;
 
         // get what was not visited yet
         if (!visited[u]) {
@@ -125,20 +135,24 @@ int Graph::dijkstraMaxPathFlow(int s, int t, std::vector<int>& parent) {
 
                 int v = kvNeighbor.first;
                 int w = kvNeighbor.second;
+                int c = distances[u] + w;
 
                 // if the edge has some weight
-                if (w > 0 && w < INF) {
-                    int c = MAX(distances[u], w);
-                    parent[v] = u;
-                    // set parent and update distance
-                    if (distances[v] == INF && c < distances[v]) {
-                        distances[v] = c;
-                        heap.insert(c, v);
-                    }
-                    else if (c < distances[v]) {
-                        distances[v] = c;
-                        heap.update(c, v);
-                    }
+                if (w > 0) {
+
+                    if (w < MIN(m_graph[u][v],
+                                ))
+//                    // set parent and update distance
+//                    if (distances[v] == 0 && c > distances[v]) {
+//                        distances[v] = c;
+//                        parent[v] = u;
+//                        heap.insert(c, v);
+//                    }
+//                    else if (c > distances[v]) {
+//                        distances[v] = c;
+//                        parent[v] = u;
+//                        heap.update(c, v);
+//                    }
                 }
             }
         }

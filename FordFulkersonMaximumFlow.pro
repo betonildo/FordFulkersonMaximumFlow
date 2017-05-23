@@ -7,19 +7,15 @@ CONFIG -= qt
 
 HEADERS = \
    $$PWD/include/definitions.hpp \
-   $$PWD/include/edge.hpp \
    $$PWD/include/Graph.hpp \
-   $$PWD/include/hollowheap.h \
    $$PWD/include/HollowHeap.hpp \
    $$PWD/include/memory_used.hpp \
-   $$PWD/include/nheap.hpp \
    $$PWD/include/read_dimacs.hpp \
    $$PWD/include/ScopeGuard.hpp \
    $$PWD/include/utils.hpp
 
 SOURCES = \
    $$PWD/src/Graph.cpp \
-   $$PWD/src/hollowheap.cc \
    $$PWD/src/main.cpp \
    $$PWD/src/memory_used.cpp
 

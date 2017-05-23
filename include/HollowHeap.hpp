@@ -4,6 +4,7 @@
 #include "utils.hpp"
 #include "definitions.hpp"
 
+
 template< typename T >
 struct array_deleter
 {
@@ -17,6 +18,10 @@ template<class Key, class Value>
 class HollowHeap {
 
 public:
+
+    std::function<bool(Key a, Key b)> comparison = [&](Key a, Key b) -> bool {
+        return a <= b;
+    };
 
     class Node;
     class Element;
@@ -192,7 +197,7 @@ private:
             h1->nextSibling = tmp;
         }
 
-        if (h1->key <= h2->key) return h1;
+        if (comparison(h1->key, h2->key)) return h1;
         else return h2;
     }
 
@@ -232,7 +237,7 @@ private:
     NodeSPtr link(NodeSPtr h1, NodeSPtr h2) {
         if (!h1) return h2;
         if (!h2) return h1;
-        if (h1->key <= h2->key) return makeChild(h1, h2);
+        if (comparison(h1->key, h2->key)) return makeChild(h1, h2);
         else return makeChild(h2, h1);
     }
 
