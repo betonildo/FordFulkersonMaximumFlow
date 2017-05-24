@@ -1,7 +1,5 @@
 #include "Graph.hpp"
 
-typedef std::pair<int, int> verticeWeight;
-
 Graph::Graph() {
     m_edgesCount = 0;
     m_verticesCount = 0;
@@ -36,6 +34,8 @@ void Graph::set(int u, int v, int w) {
     
     m_graph[u][v] = w;
     m_graph[v][u] = 0;
+//    m_graph[0][u] = w;
+//    m_graph[0][v] = w;
 }
 
 void Graph::unset(int u, int v) {
@@ -59,19 +59,19 @@ int Graph::ford_fulkerson_max_flow(int s, int t) {
     int max_flow = 0;
     int dist = 1;
 
-    while(dist > 0 && dist < INF) {
+    while(dist > 0 && dist != INF) {
 
         // while there is a path, the dijkstra resulting is a
         int path_flow = INF;
-        dist = rGraph.dijkstraMaxPathFlow(s, t, parent);
+        dist = rGraph.dijkstraFattestPath(s, t, parent);
         std::cout << "dist: " << path_flow << std::endl;
 
-        for (int v = t; v != s && v != 0; v = parent[v]) {
-            int u = parent[v];
-            int w = rGraph.get(u, v);
-            path_flow = MIN(path_flow, w);
-            std::cout << u << " - " << path_flow << " -> " << v << std::endl;
-        }
+//        for (int v = t; v != s && v != 0; v = parent[v]) {
+//            int u = parent[v];
+//            int w = rGraph.get(u, v);
+//            path_flow = MIN(path_flow, w);
+//            std::cout << u << " - " << path_flow << " -> " << v << std::endl;
+//        }
 
         // update residual graph
         for (int v = t; v != s && v != 0; v = parent[v]) {
@@ -87,21 +87,18 @@ int Graph::ford_fulkerson_max_flow(int s, int t) {
     return max_flow;
 }
 
-int Graph::dijkstraMaxPathFlow(int s, int t, std::vector<int>& parent) {
+int Graph::dijkstraFattestPath(int s, int t, std::vector<int>& parent) {
 
     // mark visited vertices (auto release on scope exit)
     std::vector<bool> visited;
-    std::vector<int> distances;
     std::vector<int> fat;
     visited.resize(m_verticesCount + 1);
-    distances.resize(m_verticesCount + 1);
     fat.resize(m_verticesCount + 1);
 
     // set all to false
     for (uint i = 0; i < m_verticesCount + 1; i++) {
         if (i != s) {
             visited[i] = false;
-            distances[i] = INF;
             fat[i] = 0;
         }
     }
@@ -110,8 +107,8 @@ int Graph::dijkstraMaxPathFlow(int s, int t, std::vector<int>& parent) {
     parent[s] = s;
 
     // init heap
-    distances[s] = INF;
-    HollowHeap<int, int> heap(0, s);
+    fat[s] = INF;
+    HollowHeap<int, int> heap(INF, s);
 
     heap.comparison = [](int a, int b) -> bool {
         return a > b;
@@ -123,42 +120,23 @@ int Graph::dijkstraMaxPathFlow(int s, int t, std::vector<int>& parent) {
         int u = heap.findminValue();
         heap.deleteMin();
 
-        // reached to the end
-//        if (u == t) break;
+        // cicle all neighbors
+        for(auto& kvNeighbor : m_graph[u]) {
 
-        // get what was not visited yet
-        if (!visited[u]) {
-            visited[u] = true;
+            int v = kvNeighbor.first;
+            int w = kvNeighbor.second;
+            int c = MIN(fat[u], w);
 
-            // cicle all neighbors
-            for(auto& kvNeighbor : m_graph[u]) {
-
-                int v = kvNeighbor.first;
-                int w = kvNeighbor.second;
-                int c = distances[u] + w;
-
-                // if the edge has some weight
-                if (w > 0) {
-
-                    if (w < MIN(m_graph[u][v],
-                                ))
-//                    // set parent and update distance
-//                    if (distances[v] == 0 && c > distances[v]) {
-//                        distances[v] = c;
-//                        parent[v] = u;
-//                        heap.insert(c, v);
-//                    }
-//                    else if (c > distances[v]) {
-//                        distances[v] = c;
-//                        parent[v] = u;
-//                        heap.update(c, v);
-//                    }
-                }
+            // save minimum capacities
+            if (fat[v] < c) {
+                fat[v] = c;
+                parent[v] = u;
+                heap.insert(c, v);
             }
         }
     }
 
-    return distances[t];
+    return fat[t];
 }
 
 

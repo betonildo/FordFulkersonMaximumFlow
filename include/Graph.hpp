@@ -4,6 +4,11 @@
 #include "definitions.hpp"
 #include "HollowHeap.hpp"
 
+struct Vertice {
+    int fat;
+    int dist;
+};
+
 class Graph {
 
 public:
@@ -19,7 +24,7 @@ public:
     // find the maximum flow
     int ford_fulkerson_max_flow(int s, int t);
     
-    int dijkstraMaxPathFlow(int s, int t, std::vector<int>& parent);
+    int dijkstraFattestPath(int s, int t, std::vector<int>& parent);
 
     // 
     int dijkstra(int s, int t, std::vector<int>& parent);    

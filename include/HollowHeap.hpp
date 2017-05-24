@@ -76,6 +76,7 @@ public:
         ElementSPtr elementPtr(new Element(v));
         NodeSPtr nodePtr(new Node(elementPtr, k));
         elementPtr->node = nodePtr;
+        nodePtr->element = elementPtr;
         m_headNode = meld(m_headNode, nodePtr);
         m_nodesCount += 1;
     }
@@ -100,8 +101,8 @@ public:
     }
 
     inline void deleteElement(ElementSPtr& e) {
-        if (e.node->element) e.node->element = nullptr;
-        if (e.node == m_headNode) deleteMin();
+        if (e->node->element) e->node->element = nullptr;
+        if (e->node == m_headNode) deleteMin();
     }
 
     inline void deleteMin() {
@@ -115,8 +116,9 @@ public:
         double lres = logBase(m_nodesCount, PHI);
         uint M = ceil(lres);
 
-        std::unique_ptr<NodeSPtr[]> Roots(new NodeSPtr[M]);
-        for (uint i = 0; i < M; i++) Roots.get()[i] = nullptr;
+        std::vector<NodeSPtr> Roots;
+        Roots.resize(M + 1);
+        for (uint i = 0; i < M; i++) Roots[i] = nullptr;
 
         uint hollowNodesCount = 0;
 
@@ -132,7 +134,7 @@ public:
         m_headNode = nullptr;
 
         for (uint i = 0; i < M; i++) {
-            NodeSPtr cursor = Roots.get()[i];
+            NodeSPtr cursor = Roots[i];
             if (cursor) {
                 cursor->nextSibling = cursor;
                 m_headNode = meld(m_headNode, cursor);
@@ -152,6 +154,10 @@ public:
     
     inline Key findminKey() {
         return getmin()->key;
+    }
+
+    inline ElementSPtr getNextElement() {
+        return findmin();
     }
 
     inline ElementSPtr findmin() {
@@ -201,7 +207,7 @@ private:
         else return h2;
     }
 
-    NodeSPtr linkHeap(NodeSPtr h, std::unique_ptr<NodeSPtr[]>& Roots, U32& hollowNodesCount) {
+    NodeSPtr linkHeap(NodeSPtr h, std::vector<NodeSPtr>& Roots, U32& hollowNodesCount) {
 
         if (
                 h->firstChild &&
@@ -221,14 +227,14 @@ private:
         }
         else {
             uint i = h->rank;
-            while(Roots.get()[i]) {
-                h = link(h, Roots.get()[i]);
-                Roots.get()[i] = nullptr;
+            while(Roots[i]) {
+                h = link(h, Roots[i]);
+                Roots[i] = nullptr;
                 i = i + 1;
                 hollowNodesCount++;
             }
 
-            Roots.get()[i] = h;
+            Roots[i] = h;
         }
 
         return h;
@@ -237,6 +243,8 @@ private:
     NodeSPtr link(NodeSPtr h1, NodeSPtr h2) {
         if (!h1) return h2;
         if (!h2) return h1;
+        if (h2.use_count() == 0) return h1;
+        if (h1.use_count() == 0) return h2;
         if (comparison(h1->key, h2->key)) return makeChild(h1, h2);
         else return makeChild(h2, h1);
     }
