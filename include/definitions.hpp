@@ -10,6 +10,7 @@
 #include <climits>
 #include <cstring>
 #include <cmath>
+#include <regex>
 
 #define INF (INT_MAX - 1)
 typedef unsigned int U32;

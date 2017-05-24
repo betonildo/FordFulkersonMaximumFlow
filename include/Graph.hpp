@@ -4,10 +4,22 @@
 #include "definitions.hpp"
 #include "HollowHeap.hpp"
 
-struct Vertice {
+struct Node;
+struct Edge;
+
+struct Node {
+    int key;
     int fat;
-    int dist;
+    std::vector<std::shared_ptr<Edge> > outEdges;
+    std::shared_ptr<Node> parent_node;
+    std::shared_ptr<Edge> parent_edge;
 };
+
+struct Edge {
+    std::shared_ptr<Node> toNode;
+    int capacity;
+};
+
 
 class Graph {
 
@@ -25,7 +37,7 @@ public:
     int ford_fulkerson_max_flow(int s, int t);
     
     int dijkstraFattestPath(int s, int t, std::vector<int>& parent);
-
+    int fattest_path();
     // 
     int dijkstra(int s, int t, std::vector<int>& parent);    
     
@@ -33,12 +45,17 @@ public:
     bool breadth_first_transversal(int s, int t);
     
     int& get(int u, int v);
+    void setSource(int src);
+    void setSink(int sink);
     
 private:
     std::map<int, std::map<int, int>> m_graph;
     int m_edgesCount;
     int m_verticesCount;
 
+    int m_src;
+    int m_sink;
+    std::map<int, std::shared_ptr<Node> > nodes;
 };
 
 #endif /*GRAPH_H*/

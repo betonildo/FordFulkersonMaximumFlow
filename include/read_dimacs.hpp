@@ -9,6 +9,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <regex>
 
 template<typename Graph>
 void read_dimacs(FILE* stream, Graph& g) {
@@ -34,15 +35,38 @@ void read_dimacs(FILE* stream, Graph& g) {
     char sp[4];
     char s;
     sscanf(buffer, "%c %s %d %d", &s, sp, &n, &m);
-    g.setSize(n);
+    g.setSize(n);    
 
     unsigned int u, v, w;
     unsigned int i = 0;
 
+    std::regex src_regex("n\\s+\\d+\\s+s");
+    std::regex sink_regex("n\\s+\\d+\\s+t");
+
+
     while (i < m) {
         
         line = fgets(buffer, BUFSIZE, stream);
-        if (line.substr(0,2) == "a ") {
+
+        auto src_begin = std::sregex_iterator(line.begin(), line.end(), src_regex);
+        auto src_end = std::sregex_iterator();
+
+        if (std::distance(src_begin, src_end) > 0) {
+            int src;
+            sscanf(buffer, "%*c %d %*c", &src);
+            g.setSource(src);
+        }
+
+        auto sink_begin = std::sregex_iterator(line.begin(), line.end(), sink_regex);
+        auto sink_end = std::sregex_iterator();
+
+        if (std::distance(sink_begin, sink_end) > 0) {
+            int sink;
+            sscanf(buffer, "%*c %d %*c", &sink);
+            g.setSink(sink);
+        }
+
+        if (line.substr(0, 2) == "a ") {
             sscanf(buffer, "%c %d %d %d", &s, &u, &v, &w);
             // std::cout << s << " " << u << " " << v << " " << w << std::endl;
             // processar arco (u,v) com peso w

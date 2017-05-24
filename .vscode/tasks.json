@@ -1,0 +1,16 @@
+{
+    "version": "0.1.0",
+    
+    "isShellCommand": true,
+    "tasks": [
+        {
+            "taskName": "Build With BASH",
+            "command": "./build.sh",
+            "isBuildCommand": true,
+            "suppressTaskName": true,
+            "linux": {
+            },            
+            "showOutput": "always"
+        }
+    ]
+}

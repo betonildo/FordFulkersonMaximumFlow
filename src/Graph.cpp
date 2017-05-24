@@ -36,6 +36,29 @@ void Graph::set(int u, int v, int w) {
     m_graph[v][u] = 0;
 //    m_graph[0][u] = w;
 //    m_graph[0][v] = w;
+
+
+
+    // try find u and v nodes that already has being added to vertices
+    std::shared_ptr<Edge> e(new Edge);
+
+    std::shared_ptr<Node> nu = nodes[u];
+    std::shared_ptr<Node> nv = nodes[v];
+
+    if (nu == nullptr)
+        nu.reset(new Node);
+    if (nv == nullptr)
+        nv.reset(new Node);
+
+    e->capacity = w;
+    e->toNode = nv;
+    nv->key = v;
+    nu->key = u;
+
+    nu->outEdges.push_back(e);
+
+    nodes[u] = nu;
+    nodes[v] = nv;
 }
 
 void Graph::unset(int u, int v) {
@@ -58,11 +81,17 @@ int Graph::ford_fulkerson_max_flow(int s, int t) {
 
     int max_flow = 0;
     int dist = 1;
+    int path_flow = 0;
+    while((path_flow = fattest_path()) > 0) {
+        max_flow += path_flow;
+    }
+
+    return max_flow;
 
     while(dist > 0 && dist != INF) {
 
         // while there is a path, the dijkstra resulting is a
-        int path_flow = INF;
+        path_flow = INF;
         dist = rGraph.dijkstraFattestPath(s, t, parent);
         std::cout << "dist: " << path_flow << std::endl;
 
@@ -137,6 +166,62 @@ int Graph::dijkstraFattestPath(int s, int t, std::vector<int>& parent) {
     }
 
     return fat[t];
+}
+
+int Graph::fattest_path() {
+
+    for(auto& kpNode : nodes) {
+        if (kpNode.second != nullptr) {
+            kpNode.second->parent_node = nullptr;
+            kpNode.second->parent_edge = nullptr;
+            kpNode.second->fat = 0;
+        }
+    }
+    std::shared_ptr<Node> root = nodes[m_src];
+    std::map<std::shared_ptr<Node>, int> Q;
+    Q[root] = INF;
+    root->fat = INF;
+
+    while(!Q.empty()) {
+        std::shared_ptr<Node> u = Q.cbegin()->first;
+        Q.erase(u);
+
+        for(std::shared_ptr<Edge> e : u->outEdges) {
+            std::shared_ptr<Node> v = e->toNode;
+
+            int minCap = (u->fat < e->capacity) ? u->fat : e->capacity;
+
+            if (v->fat < minCap) {
+                v->fat = minCap;
+
+                Q[v] = v->fat;
+
+                v->parent_node = u;
+                v->parent_edge = e;
+            }
+        }
+
+    }
+
+    int path_flow = INF;
+
+    {
+        std::shared_ptr<Node> sink = nodes[m_sink];
+        while(sink != root) {
+            path_flow = MIN(path_flow, sink->fat);
+            sink = sink->parent_node;
+        }
+    }
+
+    {
+        std::shared_ptr<Node> sink = nodes[m_sink];
+        while(sink != root) {
+            sink->parent_edge->capacity -= path_flow;
+            sink = sink->parent_node;
+        }
+    }
+
+    return path_flow;
 }
 
 
@@ -253,4 +338,12 @@ bool Graph::breadth_first_transversal(int s, int t) {
 // get edge cost
 int& Graph::get(int u, int v) {
     return m_graph[u][v];
+}
+
+void Graph::setSource(int src) {
+    m_src = src;
+}
+
+void Graph::setSink(int sink) {
+    m_sink = sink;
 }
