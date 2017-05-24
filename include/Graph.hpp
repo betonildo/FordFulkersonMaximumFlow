@@ -34,9 +34,9 @@ public:
     void unset(int u);
 
     // find the maximum flow
-    int ford_fulkerson_max_flow(int s, int t);
+    int ford_fulkerson_max_flow();
     
-    int dijkstraFattestPath(int s, int t, std::vector<int>& parent);
+    int dijkstraFattestPath(std::vector<int>& parent);
     int fattest_path();
     // 
     int dijkstra(int s, int t, std::vector<int>& parent);    
@@ -49,7 +49,7 @@ public:
     void setSink(int sink);
     
 private:
-    std::map<int, std::map<int, int>> m_graph;
+    std::map<int, std::vector<std::pair<int, int> > > m_graph;
     int m_edgesCount;
     int m_verticesCount;
 

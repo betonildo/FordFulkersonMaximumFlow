@@ -114,10 +114,11 @@ public:
         // to reduce the number N, used to discover M, each hollowNode that is
         // removed from heap, decrements one
         double lres = logBase(m_nodesCount, PHI);
-        uint M = ceil(lres);
+        uint M = ceil(lres) + 2;
+        Make2Pot(&M);
 
         std::vector<NodeSPtr> Roots;
-        Roots.resize(M + 1);
+        Roots.resize(M);
         for (uint i = 0; i < M; i++) Roots[i] = nullptr;
 
         uint hollowNodesCount = 0;
@@ -141,7 +142,7 @@ public:
             }
         }
 
-        m_nodesCount = MAX(0, m_nodesCount - hollowNodesCount);
+        m_nodesCount = MAX(0, m_nodesCount - 1);
     }
 
     inline bool isEmpty() {
@@ -227,14 +228,15 @@ private:
         }
         else {
             uint i = h->rank;
-            while(Roots[i]) {
+            while(i < Roots.size() && Roots[i] != nullptr) {
                 h = link(h, Roots[i]);
                 Roots[i] = nullptr;
                 i = i + 1;
                 hollowNodesCount++;
             }
 
-            Roots[i] = h;
+            if (i < Roots.size())
+                Roots[i] = h;
         }
 
         return h;

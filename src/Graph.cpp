@@ -18,6 +18,9 @@ Graph::Graph(Graph& other) {
             }
         }
     }
+
+    m_src = other.m_src;
+    m_sink = other.m_sink;
 }
 
 void Graph::setSize(int size) {
@@ -72,7 +75,7 @@ void Graph::unset(int u) {
 }
 
 // find the maximum flow
-int Graph::ford_fulkerson_max_flow(int s, int t) {
+int Graph::ford_fulkerson_max_flow() {
     
     Graph rGraph((Graph&) *this);
     std::vector<int> parent;
@@ -80,59 +83,37 @@ int Graph::ford_fulkerson_max_flow(int s, int t) {
     parent.resize(m_edgesCount + 1);
 
     int max_flow = 0;
-    int dist = 1;
     int path_flow = 0;
-    while((path_flow = fattest_path()) > 0) {
-        max_flow += path_flow;
-    }
+//    while((path_flow = fattest_path()) > 0) {
+//        std::cout << "path_flow: " << path_flow << std::endl;
+//        max_flow += path_flow;
+//    }
 
-    return max_flow;
+//    return max_flow;
 
-    while(dist > 0 && dist != INF) {
-
-        // while there is a path, the dijkstra resulting is a
-        path_flow = INF;
-        dist = rGraph.dijkstraFattestPath(s, t, parent);
-        std::cout << "dist: " << path_flow << std::endl;
-
-//        for (int v = t; v != s && v != 0; v = parent[v]) {
-//            int u = parent[v];
-//            int w = rGraph.get(u, v);
-//            path_flow = MIN(path_flow, w);
-//            std::cout << u << " - " << path_flow << " -> " << v << std::endl;
-//        }
-
-        // update residual graph
-        for (int v = t; v != s && v != 0; v = parent[v]) {
-            int u = parent[v];
-            rGraph.get(u, v) -= path_flow;
-            rGraph.get(v, u) += path_flow;
-            std::cout << u << " - " << rGraph.get(u, v) << " -> " << v << std::endl;
-        }
-
+    // while there is a path, the dijkstra resulting is the fattest path
+    while((path_flow = rGraph.dijkstraFattestPath(parent)) > 0) {
+        std::cout << "path_flow: " << path_flow << std::endl;
+        parent.clear();
+        parent.resize(m_verticesCount + 1);
         max_flow += path_flow;
     }
 
     return max_flow;
 }
 
-int Graph::dijkstraFattestPath(int s, int t, std::vector<int>& parent) {
+int Graph::dijkstraFattestPath(std::vector<int>& parent) {
 
-    // mark visited vertices (auto release on scope exit)
-    std::vector<bool> visited;
     std::vector<int> fat;
-    visited.resize(m_verticesCount + 1);
     fat.resize(m_verticesCount + 1);
 
-    // set all to false
-    for (uint i = 0; i < m_verticesCount + 1; i++) {
-        if (i != s) {
-            visited[i] = false;
-            fat[i] = 0;
-        }
-    }
+    // set all fat to 0
+    for (uint i = 0; i < m_verticesCount + 1; i++)
+        fat[i] = 0;
 
     // source is parent of it self
+    int s = m_src;
+    int t = m_sink;
     parent[s] = s;
 
     // init heap
@@ -140,7 +121,7 @@ int Graph::dijkstraFattestPath(int s, int t, std::vector<int>& parent) {
     HollowHeap<int, int> heap(INF, s);
 
     heap.comparison = [](int a, int b) -> bool {
-        return a > b;
+        return a >= b;
     };
 
     while(!heap.isEmpty()) {
@@ -165,7 +146,19 @@ int Graph::dijkstraFattestPath(int s, int t, std::vector<int>& parent) {
         }
     }
 
-    return fat[t];
+    int path_flow = INF;
+    for (int v = t; v != s && v != 0; v = parent[v]) {
+        //int u = parent[v];
+        path_flow = MIN(path_flow, fat[v]);
+    }
+
+    // update residual graph
+    for (int v = t; v != s && v != 0; v = parent[v]) {
+        int u = parent[v];
+        m_graph[u][v] -= path_flow;
+    }
+
+    return path_flow;
 }
 
 int Graph::fattest_path() {
@@ -207,7 +200,7 @@ int Graph::fattest_path() {
 
     {
         std::shared_ptr<Node> sink = nodes[m_sink];
-        while(sink != root) {
+        while(sink != root && sink != nullptr) {
             path_flow = MIN(path_flow, sink->fat);
             sink = sink->parent_node;
         }
@@ -215,7 +208,7 @@ int Graph::fattest_path() {
 
     {
         std::shared_ptr<Node> sink = nodes[m_sink];
-        while(sink != root) {
+        while(sink != root && sink != nullptr && sink->parent_edge != nullptr) {
             sink->parent_edge->capacity -= path_flow;
             sink = sink->parent_node;
         }

@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
     }
     std::cout << std::endl;
     std::cout << (has_path ? "true" : "false") << " that has path between " << s << " and " << t << std::endl;
-    std::cout << "max flow: " << g.ford_fulkerson_max_flow(s, t) << std::endl;
+    std::cout << "max flow: " << g.ford_fulkerson_max_flow() << std::endl;
 
     return 0;
 }
