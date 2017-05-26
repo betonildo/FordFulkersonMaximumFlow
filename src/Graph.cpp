@@ -35,33 +35,8 @@ void Graph::set(int u, int v, int w) {
     if (m_verticesCount < u) m_verticesCount = u;
     if (m_verticesCount < v) m_verticesCount = v;
     
+//    m_graph[v][u] = -w;
     m_graph[u][v] = w;
-    m_graph[v][u] = 0;
-//    m_graph[0][u] = w;
-//    m_graph[0][v] = w;
-
-
-
-    // try find u and v nodes that already has being added to vertices
-    std::shared_ptr<Edge> e(new Edge);
-
-    std::shared_ptr<Node> nu = nodes[u];
-    std::shared_ptr<Node> nv = nodes[v];
-
-    if (nu == nullptr)
-        nu.reset(new Node);
-    if (nv == nullptr)
-        nv.reset(new Node);
-
-    e->capacity = w;
-    e->toNode = nv;
-    nv->key = v;
-    nu->key = u;
-
-    nu->outEdges.push_back(e);
-
-    nodes[u] = nu;
-    nodes[v] = nv;
 }
 
 void Graph::unset(int u, int v) {
@@ -78,145 +53,89 @@ void Graph::unset(int u) {
 int Graph::ford_fulkerson_max_flow() {
     
     Graph rGraph((Graph&) *this);
-    std::vector<int> parent;
-    parent.clear();
-    parent.resize(m_edgesCount + 1);
 
     int max_flow = 0;
     int path_flow = 0;
-//    while((path_flow = fattest_path()) > 0) {
-//        std::cout << "path_flow: " << path_flow << std::endl;
-//        max_flow += path_flow;
-//    }
-
-//    return max_flow;
 
     // while there is a path, the dijkstra resulting is the fattest path
-    while((path_flow = rGraph.dijkstraFattestPath(parent)) > 0) {
-        std::cout << "path_flow: " << path_flow << std::endl;
-        parent.clear();
-        parent.resize(m_verticesCount + 1);
+    while((path_flow = rGraph.dijkstraFattestPath()) > 0) {
+//        std::cout << "path_flow: " << path_flow << std::endl;
         max_flow += path_flow;
     }
 
     return max_flow;
 }
 
-int Graph::dijkstraFattestPath(std::vector<int>& parent) {
+int Graph::dijkstraFattestPath() {
 
     std::vector<int> fat;
+    std::vector<int> parent;
     fat.resize(m_verticesCount + 1);
+    parent.resize(m_verticesCount + 1);
 
-    // set all fat to 0
-    for (uint i = 0; i < m_verticesCount + 1; i++)
+    // set all fat to 0 and parents to 0
+    for (int i = 0; i < m_verticesCount + 1; i++) {
         fat[i] = 0;
+        parent[i] = 0;
+    }
 
     // source is parent of it self
     int s = m_src;
     int t = m_sink;
-    parent[s] = s;
 
     // init heap
     fat[s] = INF;
-    HollowHeap<int, int> heap(INF, s);
 
-    heap.comparison = [](int a, int b) -> bool {
-        return a >= b;
+    typedef std::pair<int, int> WeightVertice;
+
+    class CompareWeightNode {
+    public:
+        bool operator()(WeightVertice& a, WeightVertice& b) {
+            return a.first > b.first;
+        }
     };
 
-    while(!heap.isEmpty()) {
+    typedef std::priority_queue<WeightVertice, std::vector<WeightVertice>, CompareWeightNode> PriorityQueue;
 
-        // get next vertice
-        int u = heap.findminValue();
-        heap.deleteMin();
+    PriorityQueue queue;
+//    NHeap<WeightVertice> queue(2); queue.comparator = [](WeightVertice& a, WeightVertice& b) { return a.first >= b.first; };
+
+    queue.push(std::make_pair(fat[s], s));
+
+    while(!queue.empty()) {
+
+        int u = queue.top().second;
+        queue.pop();
 
         // cicle all neighbors
         for(auto& kvNeighbor : m_graph[u]) {
 
             int v = kvNeighbor.first;
             int w = kvNeighbor.second;
-            int c = MIN(fat[u], w);
+            int c = (fat[u] < w) ? fat[u] : w;
 
             // save minimum capacities
             if (fat[v] < c) {
                 fat[v] = c;
                 parent[v] = u;
-                heap.insert(c, v);
+                queue.push(std::make_pair(c, v));
             }
         }
     }
 
     int path_flow = INF;
     for (int v = t; v != s && v != 0; v = parent[v]) {
-        //int u = parent[v];
         path_flow = MIN(path_flow, fat[v]);
     }
 
     // update residual graph
-    for (int v = t; v != s && v != 0; v = parent[v]) {
+    for (int v = t; v != s && v != 0 && parent[v] != 0; v = parent[v]) {
         int u = parent[v];
         m_graph[u][v] -= path_flow;
     }
 
     return path_flow;
 }
-
-int Graph::fattest_path() {
-
-    for(auto& kpNode : nodes) {
-        if (kpNode.second != nullptr) {
-            kpNode.second->parent_node = nullptr;
-            kpNode.second->parent_edge = nullptr;
-            kpNode.second->fat = 0;
-        }
-    }
-    std::shared_ptr<Node> root = nodes[m_src];
-    std::map<std::shared_ptr<Node>, int> Q;
-    Q[root] = INF;
-    root->fat = INF;
-
-    while(!Q.empty()) {
-        std::shared_ptr<Node> u = Q.cbegin()->first;
-        Q.erase(u);
-
-        for(std::shared_ptr<Edge> e : u->outEdges) {
-            std::shared_ptr<Node> v = e->toNode;
-
-            int minCap = (u->fat < e->capacity) ? u->fat : e->capacity;
-
-            if (v->fat < minCap) {
-                v->fat = minCap;
-
-                Q[v] = v->fat;
-
-                v->parent_node = u;
-                v->parent_edge = e;
-            }
-        }
-
-    }
-
-    int path_flow = INF;
-
-    {
-        std::shared_ptr<Node> sink = nodes[m_sink];
-        while(sink != root && sink != nullptr) {
-            path_flow = MIN(path_flow, sink->fat);
-            sink = sink->parent_node;
-        }
-    }
-
-    {
-        std::shared_ptr<Node> sink = nodes[m_sink];
-        while(sink != root && sink != nullptr && sink->parent_edge != nullptr) {
-            sink->parent_edge->capacity -= path_flow;
-            sink = sink->parent_node;
-        }
-    }
-
-    return path_flow;
-}
-
 
 int Graph::dijkstra(int s, int t, std::vector<int>& parent) {
     
@@ -225,7 +144,7 @@ int Graph::dijkstra(int s, int t, std::vector<int>& parent) {
     std::unique_ptr<int[]> distances(new int[m_verticesCount]);
     
     // set all to false
-    for (uint i = 0; i < m_verticesCount; i++) {
+    for (int i = 0; i < m_verticesCount; i++) {
         visited[i] = false;
         distances[i] = INF;
     }

@@ -12,7 +12,8 @@ HEADERS = \
    $$PWD/include/memory_used.hpp \
    $$PWD/include/read_dimacs.hpp \
    $$PWD/include/ScopeGuard.hpp \
-   $$PWD/include/utils.hpp
+   $$PWD/include/utils.hpp \
+    include/nheap.hpp
 
 SOURCES = \
    $$PWD/src/Graph.cpp \

@@ -3,6 +3,7 @@
 
 #include "definitions.hpp"
 #include "HollowHeap.hpp"
+#include "nheap.hpp"
 
 struct Node;
 struct Edge;
@@ -36,9 +37,10 @@ public:
     // find the maximum flow
     int ford_fulkerson_max_flow();
     
-    int dijkstraFattestPath(std::vector<int>& parent);
-    int fattest_path();
-    // 
+    // find the fattest capacity of the edges
+    int dijkstraFattestPath();
+
+    // find the shortest path
     int dijkstra(int s, int t, std::vector<int>& parent);    
     
     // confirm that exist a path from s to t
@@ -49,7 +51,7 @@ public:
     void setSink(int sink);
     
 private:
-    std::map<int, std::vector<std::pair<int, int> > > m_graph;
+    std::map<int, std::map<int, int> > m_graph;
     int m_edgesCount;
     int m_verticesCount;
 

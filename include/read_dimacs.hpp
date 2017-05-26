@@ -67,8 +67,9 @@ void read_dimacs(FILE* stream, Graph& g) {
         }
 
         if (line.substr(0, 2) == "a ") {
+
             sscanf(buffer, "%c %d %d %d", &s, &u, &v, &w);
-            // std::cout << s << " " << u << " " << v << " " << w << std::endl;
+
             // processar arco (u,v) com peso w
             g.set(u, v, w);
             i++;
