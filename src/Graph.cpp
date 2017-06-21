@@ -21,6 +21,10 @@ Graph::Graph(Graph& other) {
 
     m_src = other.m_src;
     m_sink = other.m_sink;
+
+    for (int i = 0; i <= m_verticesCount; i++) {
+        nodes[i] = other.nodes[i];
+    }
 }
 
 void Graph::setSize(int size) {
@@ -35,8 +39,29 @@ void Graph::set(int u, int v, int w) {
     if (m_verticesCount < u) m_verticesCount = u;
     if (m_verticesCount < v) m_verticesCount = v;
     
-//    m_graph[v][u] = -w;
     m_graph[u][v] = w;
+
+    // Node pointers
+    Node* ptrU = nodes[u] ? nodes[u] : new Node;
+    ptrU->fat = 0;
+    ptrU->key = u;
+    ptrU->parent_edge = NULL;
+    ptrU->parent_node = NULL;
+
+    Node* ptrV = nodes[v] ? nodes[v] : new Node;
+    ptrV->fat = 0;
+    ptrV->key = v;
+    ptrV->parent_edge = NULL;
+    ptrV->parent_node = NULL;
+
+    Edge* edge = new Edge;
+    edge->capacity = w;
+    edge->toNode = ptrV;
+
+    ptrU->outEdges.push_back(edge);
+
+    nodes[u] = ptrU;
+    nodes[v] = ptrV;
 }
 
 void Graph::unset(int u, int v) {
@@ -57,9 +82,14 @@ int Graph::ford_fulkerson_max_flow() {
     int max_flow = 0;
     int path_flow = 0;
 
+//    // while there is a path, the dijkstra resulting is the fattest path
+//    while((path_flow = rGraph.dijkstraFattestPath()) > 0) {
+////        std::cout << "path_flow: " << path_flow << std::endl;
+//        max_flow += path_flow;
+//    }
+
     // while there is a path, the dijkstra resulting is the fattest path
-    while((path_flow = rGraph.dijkstraFattestPath()) > 0) {
-//        std::cout << "path_flow: " << path_flow << std::endl;
+    while((path_flow = rGraph.fatest_path()) > 0) {
         max_flow += path_flow;
     }
 
@@ -137,71 +167,6 @@ int Graph::dijkstraFattestPath() {
     return path_flow;
 }
 
-int Graph::dijkstra(int s, int t, std::vector<int>& parent) {
-    
-    // mark visited vertices (auto release on scope exit)
-    std::unique_ptr<bool[]> visited(new bool[m_verticesCount]);
-    std::unique_ptr<int[]> distances(new int[m_verticesCount]);
-    
-    // set all to false
-    for (int i = 0; i < m_verticesCount; i++) {
-        visited[i] = false;
-        distances[i] = INF;
-    }
-
-    // source is parent of it self
-    parent[s] = s;
-
-    // init heap
-    distances[s] = 0;
-    HollowHeap<int, int> heap(0, s);
-//    NHeap<Edge> heap(2);
-//    heap.insert({s, 0});
-
-//    while(!heap.empty()) {
-    while(!heap.isEmpty()) {
-        
-        // get next vertice
-        //int u = heap.getNext().to;
-        int u = heap.findminValue();
-        heap.deleteMin();
-
-        // reached to the end
-//        if (u == t) break;
-
-        // get what was not visited yet
-        if (!visited[u]) {
-            visited[u] = true;
-            
-            // cicle all neighbors
-            for(auto& kvNeighbor : m_graph[u]) {
-                
-                int v = kvNeighbor.first;
-                int w = kvNeighbor.second;
-                int c = distances[u] + w;
-
-                // if the edge has some weight
-                if (w > 0) {
-                    parent[v] = u;
-                    // set parent and update distance
-                    if (distances[v] == INF && c < distances[v]) {
-                        distances[v] = c;
-                        heap.insert(c, v);
-//                        heap.insert({v, w});
-                    }
-                    else if (c < distances[v]) {
-                        distances[v] = c;
-                        heap.update(c, v);
-//                        heap.update({v, w});
-                    }
-                }
-            }
-        }
-    }
-    
-    return distances[t];
-}
-
 // confirm that exist a path from s to t
 bool Graph::breadth_first_transversal(int s, int t) {
     
@@ -258,4 +223,59 @@ void Graph::setSource(int src) {
 
 void Graph::setSink(int sink) {
     m_sink = sink;
+}
+
+
+int Graph::fatest_path() {
+
+    for (auto& nkp : nodes) {
+        Node* n = nkp.second;
+        if (n == NULL) continue;
+        n->parent_edge = NULL;
+        n->parent_node = NULL;
+        n->fat = 0;
+    }
+
+    Node* root = nodes[m_src];
+    root->fat = INF;
+
+    std::map<int, Node*> Q;
+
+    Q[root->key] = root;
+
+    while (Q.size() > 0) {
+        Node* u = Q.begin()->second;
+        Q.erase(u->key);
+
+        for (Edge* e : u->outEdges) {
+            Node* v = e->toNode;
+
+            int minCap = (u->fat < e->capacity) ? u->fat : e->capacity;
+
+            if (v->fat < minCap) {
+                v->fat = minCap;
+
+                Q[v->key] = v;
+
+                v->parent_node = u;
+                v->parent_edge = e;
+            }
+        }
+    }
+
+    int path_max = INF;
+
+    for (Node* next = nodes[m_sink]; next != NULL; next = next->parent_node) {
+        path_max = MIN(path_max, next->fat);
+    }
+
+    std::cout << "path flow: " << path_max << std::endl;
+    std::cout << "path: ";
+    for (Node* next = nodes[m_sink]; next != NULL && next->parent_edge != NULL; next = next->parent_node) {
+        std::cout << next->key << " <- (" << next->parent_edge->capacity << ") - ";
+        next->parent_edge->capacity -= path_max;
+    }
+    std::cout << root->key << std::endl;
+
+    return path_max;
 }
