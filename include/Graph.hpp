@@ -10,14 +10,44 @@ struct Edge;
 struct Node {
     int key;
     int fat;
-    std::vector<Edge*> outEdges;
-    Node* parent_node;
-    Edge* parent_edge;
+    std::vector<std::shared_ptr<Edge> > outEdges;
+    std::shared_ptr<Node> parent_node;
+    std::shared_ptr<Edge> parent_edge;
+
+    Node() {}
+
+    Node(Node* other) {
+        key = other->key;
+        fat = other->fat;
+        outEdges = other->outEdges;
+        parent_node = other->parent_node;
+        parent_edge = other->parent_edge;
+    }
+
+    Node(const Node& other) {
+        key = other.key;
+        fat = other.fat;
+        outEdges = other.outEdges;
+        parent_node = other.parent_node;
+        parent_edge = other.parent_edge;
+    }
 };
 
 struct Edge {
-    Node* toNode;
+    std::shared_ptr<Node> toNode;
     int capacity;
+
+    Edge() {}
+
+    Edge(Edge* other) {
+        capacity = other->capacity;
+        toNode = other->toNode;
+    }
+
+    Edge(const Edge& other) {
+        capacity = other.capacity;
+        toNode = other.toNode;
+    }
 };
 
 
@@ -55,7 +85,7 @@ private:
 
     int m_src;
     int m_sink;
-    std::map<int, Node*> nodes;
+    std::map<int, std::shared_ptr<Node> > nodes;
 };
 
 #endif /*GRAPH_H*/

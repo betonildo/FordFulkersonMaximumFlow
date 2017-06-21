@@ -3,6 +3,9 @@
 Graph::Graph() {
     m_edgesCount = 0;
     m_verticesCount = 0;
+
+    for (auto& nkv : nodes)
+        nkv.second.reset();
 }
 
 Graph::Graph(Graph& other) {
@@ -42,19 +45,19 @@ void Graph::set(int u, int v, int w) {
     m_graph[u][v] = w;
 
     // Node pointers
-    Node* ptrU = nodes[u] ? nodes[u] : new Node;
+    auto ptrU = nodes[u] ? nodes[u] : std::make_shared<Node>(new Node);
     ptrU->fat = 0;
     ptrU->key = u;
-    ptrU->parent_edge = NULL;
-    ptrU->parent_node = NULL;
+    ptrU->parent_edge = nullptr;
+    ptrU->parent_node = nullptr;
 
-    Node* ptrV = nodes[v] ? nodes[v] : new Node;
+    auto ptrV = nodes[v] ? nodes[v] : std::make_shared<Node>(new Node);
     ptrV->fat = 0;
     ptrV->key = v;
-    ptrV->parent_edge = NULL;
-    ptrV->parent_node = NULL;
+    ptrV->parent_edge = nullptr;
+    ptrV->parent_node = nullptr;
 
-    Edge* edge = new Edge;
+    auto edge = std::make_shared<Edge>(new Edge);
     edge->capacity = w;
     edge->toNode = ptrV;
 
@@ -229,33 +232,56 @@ void Graph::setSink(int sink) {
 int Graph::fatest_path() {
 
     for (auto& nkp : nodes) {
-        Node* n = nkp.second;
-        if (n == NULL) continue;
-        n->parent_edge = NULL;
-        n->parent_node = NULL;
+        std::shared_ptr<Node> n = nkp.second;
+        if (n == nullptr) continue;
+        n->parent_edge = nullptr;
+        n->parent_node = nullptr;
         n->fat = 0;
     }
 
-    Node* root = nodes[m_src];
+    std::shared_ptr<Node> root = nodes[m_src];
     root->fat = INF;
 
-    std::map<int, Node*> Q;
+    //std::map<int, Node*> Q;
 
-    Q[root->key] = root;
+    std::vector<std::shared_ptr<Node> > Q;
+//    Q.resize(m_verticesCount);
+    Q.push_back(root);
+
+//    Q[root->key] = root;
 
     while (Q.size() > 0) {
-        Node* u = Q.begin()->second;
-        Q.erase(u->key);
 
-        for (Edge* e : u->outEdges) {
-            Node* v = e->toNode;
+//        Node* u = Q.begin()->second;
+//        Q.erase(u->key);
+
+        std::shared_ptr<Node> u = Q[0];
+        Q.erase(Q.begin());
+
+
+        for (std::shared_ptr<Edge>& e : u->outEdges) {
+            std::shared_ptr<Node> v = e->toNode;
 
             int minCap = (u->fat < e->capacity) ? u->fat : e->capacity;
 
             if (v->fat < minCap) {
                 v->fat = minCap;
 
-                Q[v->key] = v;
+//                Q[v->key] = v;
+                Q.push_back(v);
+
+                std::sort(Q.begin(), Q.end(), [](std::shared_ptr<Node>& a, std::shared_ptr<Node>& b) {
+                    try{
+                        if (a == NULL || a.use_count() == 0) return 1;
+                        else return -1;
+                        return a->key - b->key;
+                    }
+                    catch(std::exception e) {
+                        std::cerr << e.what() << std::endl;
+                        if (!a) return 1;
+                        else return -1;
+                    }
+                });
 
                 v->parent_node = u;
                 v->parent_edge = e;
@@ -265,13 +291,13 @@ int Graph::fatest_path() {
 
     int path_max = INF;
 
-    for (Node* next = nodes[m_sink]; next != NULL; next = next->parent_node) {
+    for (std::shared_ptr<Node> next = nodes[m_sink]; next != nullptr; next = next->parent_node) {
         path_max = MIN(path_max, next->fat);
     }
 
     std::cout << "path flow: " << path_max << std::endl;
     std::cout << "path: ";
-    for (Node* next = nodes[m_sink]; next != NULL && next->parent_edge != NULL; next = next->parent_node) {
+    for (std::shared_ptr<Node> next = nodes[m_sink]; next != nullptr && next->parent_edge != nullptr; next = next->parent_node) {
         std::cout << next->key << " <- (" << next->parent_edge->capacity << ") - ";
         next->parent_edge->capacity -= path_max;
     }
